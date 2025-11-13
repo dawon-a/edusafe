@@ -1,1 +1,567 @@
-# edusafe
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>교육시설 안전성평가 대상 확인</title>
+<style>
+  :root{
+    --brand:#133e8d; --ink:#222; --muted:#6b7280; --card:#fff;
+    --btn:#0f3a8a; --btn-t:#fff; --ok:#1e7b1e; --bad:#f59e0b;
+    --soft-ok:#e8f5e9; --soft-bad:#fff7ed; --shadow:0 8px 24px rgba(0,0,0,.08);
+    --err:#d92d20; --err-bg:#fee4e2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:#dfe8f5;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","맑은 고딕",sans-serif;
+    color:var(--ink);
+  }
+  .appbar{
+    background:var(--brand);
+    color:#fff;
+    padding:18px 20px;
+    position:sticky;
+    top:0;
+    z-index:100;
+  }
+  .title{
+    text-align:center;
+    font-weight:800;
+    font-size:28px;
+    letter-spacing:-.5px;
+  }
+  .wrap{
+    max-width:980px;
+    margin:24px auto;
+    padding:0 16px;
+    position:relative;
+  }
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:18px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:14px;
+    align-items:center;
+    margin:10px 0;
+  }
+  .label{font-weight:700}
+  .req{color:#dc2626;margin-left:2px}
+  .hint{color:var(--muted);font-size:12px}
+  .field{
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  input,select{
+    width:100%;
+    max-width:260px;
+    padding:10px 12px;
+    border:1px solid #c7d2fe;
+    border-radius:8px;
+    background:#f8fbff;
+    font-size:16px;
+    outline:none;
+  }
+  input:focus,select:focus{box-shadow:0 0 0 3px rgba(19,62,141,.15)}
+  .radio{display:flex;gap:16px}
+  .btn{
+    background:var(--btn);
+    color:var(--btn-t);
+    border:0;
+    padding:12px 18px;
+    border-radius:10px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .btn:active{transform:translateY(1px)}
+  .notice{
+    margin-top:10px;
+    background:#fff7ed;
+    color:#92400e;
+    border-left:5px solid #f59e0b;
+    padding:10px 12px;
+    border-radius:10px;
+    font-weight:600;
+    text-align:center;
+  }
+  .err{
+    display:none;
+    font-size:12px;
+    color:var(--err);
+    background:var(--err-bg);
+    padding:6px 8px;
+    border-radius:8px;
+    margin-top:4px;
+  }
+  .has-error input,
+  .has-error select{
+    border-color:var(--err);
+  }
+  .resultbox{
+    display:none;
+    margin-top:14px;
+    border-left:6px solid var(--ok);
+    border-radius:12px;
+    padding:14px;
+    background:var(--soft-ok);
+  }
+  .resultbox.bad{
+    background:var(--soft-bad);
+    border-left-color:var(--bad);
+  }
+  .result-title{
+    font-weight:800;
+    margin-bottom:6px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .result-title.hidden{display:none}
+  .ico{font-size:18px}
+  .guide{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:#f1f5ff;
+    color:#1f3b74;
+    font-size:14px;
+  }
+  .guide a{
+    color:#0f3a8a;
+    font-weight:700;
+    text-decoration:none;
+    border-bottom:1px solid currentColor;
+    margin-right:8px;
+    display:inline-block;
+    margin-top:4px;
+  }
+  /* 광고: 스크롤 시 따라오는 고정 배너(데스크탑) */
+  .ad{
+    position:fixed;
+    right:16px;
+    top:80px;
+    z-index:9999;
+    text-align:right;
+  }
+  .ad .unit{
+    display:inline-block;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:10px;
+  }
+  .ad img{height:50px;vertical-align:middle}
+  .ad p{margin:6px 0 0 0;font-size:12px;color:#4b5563}
+  .stats{
+    margin-top:24px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .panel{
+    background:#fff;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:14px;
+  }
+  .panel h3{margin:0 0 10px 0;font-size:16px}
+  #trend{width:100%;height:160px;display:block}
+  @media (max-width:640px){
+    .row{grid-template-columns:1fr}
+    .ad{
+      position:static;
+      margin-bottom:8px;
+      text-align:center;
+    }
+    .ad .unit{width:100%}
+    /* 모바일: 결과창을 하단 패널처럼 보이게 */
+    #result{
+      position:fixed;
+      left:0;right:0;bottom:0;
+      margin:0;
+      border-radius:16px 16px 0 0;
+      max-height:50vh;
+      overflow:auto;
+      z-index:500;
+    }
+  }
+</style>
+</head>
+<body>
+<header class="appbar" role="banner">
+  <div class="title">교육시설 안전성평가 대상 확인</div>
+</header>
+
+<main class="wrap" role="main">
+  <!-- 광고: 스크롤 따라오는 배너 -->
+  <aside class="ad" aria-label="스폰서">
+    <a class="unit" href="http://dawonsafety.com/board/board_view?code=estimate&no=16" target="_blank" rel="noopener">
+      <img src="dawon-logo.png" alt="다원안전" />
+      <p class="muted">견적 바로가기</p>
+    </a>
+  </aside>
+
+  <!-- 입력 카드 -->
+  <section class="card" aria-labelledby="formTitle">
+    <h2 id="formTitle" class="visually-hidden" style="position:absolute;left:-9999px">입력</h2>
+
+    <div class="row" id="rowScope">
+      <div class="label">위치 구분<span class="req">*</span></div>
+      <div>
+        <div class="radio" role="radiogroup">
+          <label><input type="radio" name="scope" value="교내"> 교내</label>
+          <label><input type="radio" name="scope" value="교외"> 교외</label>
+        </div>
+        <div class="err" id="errScope" aria-live="polite">위치구분을 선택해주세요</div>
+      </div>
+    </div>
+
+    <div class="row" id="rowW23">
+      <div class="label">학교경계 이격거리(m)<span class="req">*</span></div>
+      <div>
+        <div class="field">
+          <input id="w23" type="number" placeholder="예: 12" inputmode="decimal" aria-describedby="w23Help">
+        </div>
+        <div id="w23Help" class="hint">예: 학교 경계선(담장 등)에서 공사장 경계까지의 직선거리(m)</div>
+        <div class="err" id="errW23" aria-live="polite">이격거리를 입력해주세요</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">영향거리(m)</div>
+      <div>
+        <div class="field">
+          <input id="w31" type="number" readonly placeholder="자동 계산">
+          <span class="hint">※ 굴착/부지 조건에 따라 자동 산정</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" id="rowW24">
+      <div class="label">굴착깊이 h1(m)</div>
+      <div>
+        <div class="field">
+          <input id="w24" type="number" placeholder="예: 3.0" inputmode="decimal" aria-describedby="w24Help">
+        </div>
+        <div id="w24Help" class="hint">예: 지표면에서 가장 깊은 굴착 저면까지의 깊이(m)</div>
+        <div class="err" id="errW26need" aria-live="polite">굴착·단차 입력 시 ‘부지높이 관계’를 선택해주세요</div>
+      </div>
+    </div>
+
+    <div class="row" id="rowW25">
+      <div class="label">부지단차 h2(m)</div>
+      <div>
+        <div class="field">
+          <input id="w25" type="number" placeholder="예: 1.5" inputmode="decimal" aria-describedby="w25Help">
+        </div>
+        <div id="w25Help" class="hint">예: 학교 부지와 공사부지 사이의 높이 차이(m)</div>
+      </div>
+    </div>
+
+    <div class="row" id="rowW26">
+      <div class="label">부지높이 관계</div>
+      <div>
+        <div class="field">
+          <select id="w26" aria-describedby="w26Help">
+            <option value="">선택</option>
+            <option value="같음">같음</option>
+            <option value="낮음">낮음</option>
+            <option value="높음">높음</option>
+          </select>
+          <span id="w26Help" class="hint">※ 굴착·단차 입력 시 필수</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">구조물 높이(m)</div>
+      <div>
+        <div class="field">
+          <input id="w27" type="number" placeholder="예: 11.0" inputmode="decimal" aria-describedby="w27Help">
+        </div>
+        <div id="w27Help" class="hint">예: 지표면부터 구조물 최상단까지 높이(m) / *구조물 : 건축·토목·가설 구조물</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">층수</div>
+      <div>
+        <div class="field">
+          <input id="w28" type="number" placeholder="예: 5" inputmode="numeric" aria-describedby="w28Help">
+        </div>
+        <div id="w28Help" class="hint">예: 지상층 기준 층수(지하층 제외 또는 별도 기준에 따라 적용)</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">공사종류</div>
+      <div>
+        <div class="field">
+          <select id="w30">
+            <option value="">선택</option>
+            <option value="터널공사">터널공사</option>
+            <option value="발파공사">발파공사</option>
+            <option value="건축물 해체공사(허가)">건축물 해체공사(허가)</option>
+            <option value="건축물 해체공사(신고)">건축물 해체공사(신고)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="notice">현장마다 상이할 수 있으니 참고용으로만 사용 바랍니다.</div>
+
+    <div class="field" style="justify-content:flex-end;margin-top:8px">
+      <button id="check" class="btn">결과확인</button>
+    </div>
+
+    <!-- 결과창 -->
+    <div id="result" class="resultbox" role="status" aria-live="polite">
+      <div id="resultTitle" class="result-title">
+        <span id="resultIcon" class="ico" aria-hidden="true">✅</span>
+        <span id="resultTitleText"></span>
+      </div>
+      <div id="resultMsg"></div>
+      <div id="nextGuide" class="guide" style="display:none">
+        <strong>다음 단계 안내</strong><br>
+        👉 교육시설 안전성평가 대상입니다.<br>
+        제출처: 관할 교육청 건축과(또는 관련 부서)<br>
+        제출서류: 교육시설 안전성평가서 및 관련 도서·도면 등<br>
+        <a href="http://dawonsafety.com/board/board_view?code=estimate&no=16" target="_blank" rel="noopener">견적/문의 바로가기</a>
+        <a href="#" target="_blank" rel="noopener">관련 지침(국토부) 바로가기</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 방문자 트래픽 -->
+  <section class="stats">
+    <div class="panel">
+      <h3>방문 현황 <span class="hint">(실시간)</span></h3>
+      <div>오늘 방문: <strong id="todayCnt">0</strong>명</div>
+      <canvas id="trend" height="160"></canvas>
+    </div>
+    <div class="panel">
+      <h3>일자별 트래픽</h3>
+      <button id="dl" class="btn">엑셀(CSV) 다운로드</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(()=>{"use strict";
+const d=document,$=s=>d.querySelector(s),N=v=>Number(v)||0;
+
+/* 영향거리 계산 */
+const calcW31=({w24,w25,w26,w27})=>{
+  if(w24>=2){
+    if(w26==="같음") return 1.5*w24+4;
+    if(w26==="낮음") return 1.5*(w24+w25)+4;
+    if(w26==="높음") return 1.5*(w24-w25)+4;
+  }
+  return w27||0;
+};
+
+/* 값 수집 */
+const getVals=()=>({
+  scope:d.querySelector('input[name="scope"]:checked')?.value||"",
+  w23:N($("#w23").value),
+  w24:N($("#w24").value),
+  w25:N($("#w25").value),
+  w26:$("#w26").value,
+  w27:N($("#w27").value),
+  w28:N($("#w28").value),
+  w30:$("#w30").value
+});
+
+/* 에러 표시 */
+const showErr=(rowSel, errSel, on)=>{
+  const row=$(rowSel), err=$(errSel);
+  if(!row || !err) return;
+  if(on){
+    row.classList.add("has-error");
+    err.style.display="block";
+  }else{
+    row.classList.remove("has-error");
+    err.style.display="none";
+  }
+};
+
+/* 실시간 유효성 검사 */
+const validateScope=()=>{
+  const sel=d.querySelector('input[name="scope"]:checked');
+  showErr("#rowScope","#errScope",!sel);
+  return !!sel;
+};
+const validateW23=()=>{
+  const v=$("#w23").value.trim();
+  showErr("#rowW23","#errW23",v==="");
+  return v!=="";
+};
+const toggleW26Required=()=>{
+  const need = !!($("#w24").value) || !!($("#w25").value);
+  $("#w26").required = need;
+  const ok = $("#w26").value!=="" || !need;
+  showErr("#rowW24","#errW26need", need && !ok);
+  return ok;
+};
+
+["blur","input","change"].forEach(ev=>{
+  d.addEventListener(ev, e=>{
+    if(e.target?.id==="w23") validateW23();
+    if(e.target?.name==="scope") validateScope();
+    if(["w24","w25","w26"].includes(e.target?.id)) toggleW26Required();
+  }, true);
+});
+
+/* 판정 로직
+   - 교외&4<이격≤50&층수≥3 → 대상
+   - 교외&4<이격≤50&높이≥10 & 이격<높이 → 대상
+   - 나머지 조건은 이전과 동일
+*/
+const judge=(p)=>{
+  if(!p.scope && p.w23){return {type:"guide",msg:"위치구분을 선택해주세요"};}
+  if(!p.scope || !p.w23){return {type:"guide",msg:"이격거리를 입력해주세요"};}
+
+  if(p.scope==="교내")
+    return {type:"good",msg:"(교내)건축허가 및 건축승인에 따른 교육시설"};
+
+  if(p.scope==="교외" && p.w23<=4)
+    return {type:"good",msg:"(교외)학교경계로부터 직선거리 4미터 이내의 건설공사"};
+
+  const inRange = (p.scope==="교외" && p.w23>4 && p.w23<=50);
+
+  // 층수 조건(우선 적용)
+  if(inRange && p.w28>=3)
+    return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
+
+  // 구조물 높이 조건: 높이≥10 & 이격<높이
+  if(inRange && p.w27>=10 && p.w23 < p.w27)
+    return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
+
+  // 특정 공사(터널/발파/해체)
+  if(inRange && ["터널공사","발파공사","건축물 해체공사(허가)","건축물 해체공사(신고)"].includes(p.w30))
+    return {type:"good",msg:p.w30};
+
+  // 굴착 조건
+  if(inRange && p.w24>2){
+    const w31=calcW31(p);
+    if(p.w23 < w31)
+      return {type:"good",msg:"굴착깊이 2미터 이상인 경우"};
+  }
+
+  return {type:"bad",msg:"비대상"};
+};
+
+/* 결과 표시 */
+const render=(res)=>{
+  const box=$("#result"),
+        title=$("#resultTitle"),
+        titleText=$("#resultTitleText"),
+        icon=$("#resultIcon"),
+        msg=$("#resultMsg"),
+        guide=$("#nextGuide");
+
+  box.style.display="block";
+  msg.textContent=res.msg;
+
+  if(res.type==="good"){
+    box.className="resultbox";
+    title.classList.remove("hidden");
+    titleText.textContent="작성 대상입니다. 적용 항목:";
+    icon.textContent="✅";
+    guide.style.display="block";
+  }else if(res.type==="bad"){
+    box.className="resultbox bad";
+    title.classList.remove("hidden");
+    titleText.textContent="작성 비대상입니다.";
+    icon.textContent="⚠️";
+    guide.style.display="none";
+  }else{ // guide 메시지
+    box.className="resultbox bad";
+    title.classList.add("hidden");
+    titleText.textContent="";
+    icon.textContent="⚠️";
+    guide.style.display="none";
+  }
+
+  box.scrollIntoView({behavior:"smooth",block:"start"});
+};
+
+/* 버튼 클릭 */
+$("#check").addEventListener("click",()=>{
+  const okScope = validateScope();
+  const okW23   = validateW23();
+  const okW26   = toggleW26Required();
+
+  const v = getVals();
+  const w31 = calcW31(v);
+  $("#w31").value = w31 ? Math.round(w31*100)/100 : "";
+
+  if(!okScope || !okW23 || !okW26){
+    if(!okScope && $("#w23").value) return render({type:"guide",msg:"위치구분을 선택해주세요"});
+    if(!okW23) return render({type:"guide",msg:"이격거리를 입력해주세요"});
+    if(!okW26) return render({type:"guide",msg:"굴착·단차 입력 시 ‘부지높이 관계’를 선택해주세요"});
+  }
+
+  const res = judge(v);
+  render(res);
+});
+
+/* 방문자 통계(로컬) + 차트 + CSV */
+const KEY="edu_safety_visitors",
+hit=()=>{
+  const t=(new Date()).toISOString().slice(0,10);
+  const data=JSON.parse(localStorage.getItem(KEY)||"{}");
+  data[t]=(data[t]||0)+1;
+  localStorage.setItem(KEY,JSON.stringify(data));
+  return data;
+},
+draw=(ctx,xs,ys)=>{
+  const W=ctx.canvas.width,H=ctx.canvas.height,L=xs.length,p=12;
+  const max=Math.max(1,...ys);
+  const X=i=>p+i*(W-2*p)/Math.max(1,L-1);
+  const Y=v=>H-p-v*(H-2*p)/(max||1);
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath();
+  ctx.moveTo(X(0),Y(ys[0]||0));
+  for(let i=1;i<L;i++) ctx.lineTo(X(i),Y(ys[i]||0));
+  ctx.lineWidth=2;
+  ctx.stroke();
+  for(let i=0;i<L;i++){
+    ctx.beginPath();
+    ctx.arc(X(i),Y(ys[i]||0),3,0,Math.PI*2);
+    ctx.fill();
+  }
+},
+csv=(o)=>{
+  const rows=[["date","visits"],...Object.entries(o).sort((a,b)=>a[0]>b[0]?1:-1)];
+  const blob=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=d.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="visitors.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.addEventListener("DOMContentLoaded",()=>{
+  const store=hit();
+  $("#todayCnt").textContent=store[(new Date()).toISOString().slice(0,10)]||0;
+  const days=[...Array(14)].map((_,i)=>{
+    const dd=new Date();
+    dd.setDate(dd.getDate()-13+i);
+    return dd.toISOString().slice(0,10);
+  });
+  const ys=days.map(dt=>store[dt]||0);
+  draw($("#trend").getContext("2d"),days,ys);
+  $("#dl").addEventListener("click",()=>csv(store));
+});
+})();
+</script>
+</body>
+</html>
