@@ -10,12 +10,6 @@
     --btn:#0f3a8a; --btn-t:#fff; --ok:#1e7b1e; --bad:#f59e0b;
     --soft-ok:#e8f5e9; --soft-bad:#fff7ed; --shadow:0 8px 24px rgba(0,0,0,.08);
     --err:#d92d20; --err-bg:#fee4e2;
-    /* 추가 색상 (파스텔 계열) */
-    --pastel-line: rgba(147,197,253,0.95); /* pastel blue */
-    --pastel-fill: rgba(173,216,230,0.28); /* light pastel */
-    --pastel-point: rgba(110,231,183,0.9); /* pastel green */
-    --tooltip-bg: rgba(17,24,39,0.95);
-    --tooltip-fg: #fff;
   }
   *{box-sizing:border-box}
   body{
@@ -166,37 +160,6 @@
   }
   .ad img{height:50px;vertical-align:middle}
   .ad p{margin:6px 0 0 0;font-size:12px;color:#4b5563}
-  .stats{
-    margin-top:24px;
-    display:grid;
-    grid-template-columns:1fr;
-    gap:12px;
-  }
-  .panel{
-    background:#fff;
-    border-radius:14px;
-    box-shadow:var(--shadow);
-    padding:14px;
-  }
-  .panel h3{margin:0 0 10px 0;font-size:16px}
-  /* 그래프를 조금 더 작게 (기본 160 -> 120) */
-  #trend{width:100%;height:120px;display:block}
-  /* 툴팁 */
-  .chart-tooltip{
-    position:fixed;
-    pointer-events:none;
-    background:var(--tooltip-bg);
-    color:var(--tooltip-fg);
-    padding:8px 10px;
-    border-radius:8px;
-    font-size:13px;
-    box-shadow:0 6px 18px rgba(2,6,23,.4);
-    transform:translate(-50%, -120%);
-    white-space:nowrap;
-    z-index:2000;
-    display:none;
-  }
-
   @media (max-width:640px){
     .row{grid-template-columns:1fr}
     .ad{
@@ -215,7 +178,6 @@
       overflow:auto;
       z-index:500;
     }
-    #trend{height:100px}
   }
 </style>
 </head>
@@ -233,7 +195,7 @@
     </a>
   </aside>
 
-  <!-- 입력 카드 (원본 그대로 유지) -->
+  <!-- 입력 카드 -->
   <section class="card" aria-labelledby="formTitle">
     <h2 id="formTitle" class="visually-hidden" style="position:absolute;left:-9999px">입력</h2>
 
@@ -325,7 +287,7 @@
       </div>
     </div>
 
-    <!-- ✅ 건축물 높이 + 에러 -->
+    <!-- 건축물 높이 + 에러 -->
     <div class="row" id="rowW29">
       <div class="label">건축물 높이(m)</div>
       <div>
@@ -374,41 +336,13 @@
       </div>
     </div>
   </section>
-
-  <!-- 방문자 트래픽 -->
-  <section class="stats">
-    <div class="panel">
-      <h3>방문 현황 <span class="hint">(실시간)</span></h3>
-      <div>오늘 방문: <strong id="todayCnt">0</strong>명</div>
-      <canvas id="trend" width="800" height="120"></canvas>
-      <!-- 툴팁을 body 레벨에 둡니다 -->
-      <div id="chartTooltip" class="chart-tooltip" role="status" aria-hidden="true"></div>
-    </div>
-    <div class="panel">
-      <h3>일자별 트래픽</h3>
-      <button id="dl" class="btn">엑셀(CSV) 다운로드</button>
-    </div>
-  </section>
 </main>
 
 <script>
 (()=>{"use strict";
-/*
-  교수님 스타일 주석:
-  - 이 스크립트는 원본 판정 로직(입력/검증/판정)을 그대로 유지합니다.
-  - 방문자 통계는 '클라이언트 저장(localStorage)' 기반의 세션+쿠키 설계를 적용했습니다.
-  - 서버 동기화가 필요하면 recordVisit()의 내부에서 fetch()로 전송하도록 확장하세요.
-*/
-
-/* -------------------------
-   짧은 유틸리티
---------------------------*/
 const d=document,$=s=>d.querySelector(s),N=v=>Number(v)||0;
-const isoDate = dt => dt.toISOString().slice(0,10);
 
-/* -------------------------
-   영향거리 계산 (원본 유지)
---------------------------*/
+/* 영향거리 계산 */
 const calcW31=({w24,w25,w26,w27})=>{
   if(w24>=2){
     if(w26==="같음") return 1.5*w24+4;
@@ -418,24 +352,20 @@ const calcW31=({w24,w25,w26,w27})=>{
   return w27||0;
 };
 
-/* -------------------------
-   입력값 수집 (원본 유지)
---------------------------*/
+/* 값 수집 */
 const getVals=()=>({
   scope:d.querySelector('input[name="scope"]:checked')?.value||"",
   w23:N($("#w23").value),
   w24:N($("#w24").value),
   w25:N($("#w25").value),
   w26:$("#w26").value,
-  w27:N($("#w27").value),
-  w28:N($("#w28").value),
-  w29:N($("#w29").value),
+  w27:N($("#w27").value), // 구조물 높이
+  w28:N($("#w28").value), // 층수
+  w29:N($("#w29").value), // 건축물 높이
   w30:$("#w30").value
 });
 
-/* -------------------------
-   에러/검증/판정 로직 (원본 유지)
---------------------------*/
+/* 에러 표시 */
 const showErr=(rowSel, errSel, on)=>{
   const row=$(rowSel), err=$(errSel);
   if(!row || !err) return;
@@ -447,6 +377,8 @@ const showErr=(rowSel, errSel, on)=>{
     err.style.display="none";
   }
 };
+
+/* 실시간 유효성 검사 */
 const validateScope=()=>{
   const sel=d.querySelector('input[name="scope"]:checked');
   showErr("#rowScope","#errScope",!sel);
@@ -454,13 +386,14 @@ const validateScope=()=>{
 };
 const validateW23=()=>{
   const scope=d.querySelector('input[name="scope"]:checked')?.value||"";
+  // 교내일 때는 이격거리(0 포함) 필수 아님
   if(scope==="교내"){
     showErr("#rowW23","#errW23",false);
     return true;
   }
   const v=$("#w23").value.trim();
   showErr("#rowW23","#errW23",v==="");
-  return v!=="";
+  return v!==""; // 교외에서만 필수
 };
 const toggleW26Required=()=>{
   const need = !!($("#w24").value) || !!($("#w25").value);
@@ -469,10 +402,12 @@ const toggleW26Required=()=>{
   showErr("#rowW24","#errW26need", need && !ok);
   return ok;
 };
+
+/* 층수 입력 시 건축물 높이 필수 검증 */
 const validateW29=()=>{
   const floors = $("#w28").value.trim();
   const bHeight = $("#w29").value.trim();
-  const need = floors !== "";
+  const need = floors !== "";   // 층수 입력됐으면 건축물 높이 필수
   const ok = !need || bHeight !== "";
   showErr("#rowW29","#errW29", need && !ok);
   return ok;
@@ -483,14 +418,20 @@ const validateW29=()=>{
     if(e.target?.id==="w23") validateW23();
     if(e.target?.name==="scope"){
       validateScope();
-      validateW23();
+      validateW23(); // 위치구분 바뀔 때 이격거리 에러도 재조정
     }
     if(["w24","w25","w26"].includes(e.target?.id)) toggleW26Required();
-    if(["w28","w29"].includes(e.target?.id)) validateW29();
+    if(["w28","w29"].includes(e.target?.id)) validateW29(); // 층수/건축물 높이 변경 시 검증
   }, true);
 });
 
-/* 판정 로직 그대로 유지 */
+/* 판정 로직
+   - 교내: 이격거리와 무관하게(0 포함) 작성 대상
+   - 교외 & 4m 초과 ~ 50m 이내(inRange)에서
+       · 층수 ≥3 이면서 건축물 높이>0, 이격거리 < 건축물 높이 → 대상
+       · 구조물 높이 ≥10 이면서 이격거리 < 구조물 높이 → 대상
+   - 나머지 조건(터널/발파/해체/굴착)은 이전과 동일
+*/
 const judge=(p)=>{
   const rawW23 = $("#w23").value.trim();
 
@@ -498,10 +439,12 @@ const judge=(p)=>{
 
   if(!p.scope){return {type:"guide",msg:"위치구분을 선택해주세요"};}
 
+  // 교내: 이격거리와 무관하게 작성 대상
   if(p.scope==="교내"){
     return {type:"good",msg:"(교내)건축허가 및 건축승인에 따른 교육시설"};
   }
 
+  // 교외인 경우에만 이격거리 필수
   if(p.scope==="교외" && !rawW23){
     return {type:"guide",msg:"이격거리를 입력해주세요"};
   }
@@ -511,17 +454,21 @@ const judge=(p)=>{
 
   const inRange = (p.scope==="교외" && p.w23>4 && p.w23<=50);
 
+  // 🔹 교외 & 4m초과~50m이내 & 층수 ≥3 & 이격거리 < 건축물 높이
   if(inRange && p.w28>=3 && p.w29>0 && p.w23 < p.w29){
     return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
   }
 
+  // 🔹 교외 & 4m초과~50m이내 & 구조물 높이 ≥10m & 이격거리 < 구조물 높이
   if(inRange && p.w27>=10 && p.w23 < p.w27){
     return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
   }
 
+  // 특정 공사(터널/발파/해체)
   if(inRange && ["터널공사","발파공사","건축물 해체공사(허가)","건축물 해체공사(신고)"].includes(p.w30))
     return {type:"good",msg:p.w30};
 
+  // 굴착 조건
   if(inRange && p.w24>2){
     const w31=calcW31(p);
     if(p.w23 < w31)
@@ -531,6 +478,7 @@ const judge=(p)=>{
   return {type:"bad",msg:"비대상"};
 };
 
+/* 결과 표시 */
 const render=(res)=>{
   const box=$("#result"),
         title=$("#resultTitle"),
@@ -565,11 +513,12 @@ const render=(res)=>{
   box.scrollIntoView({behavior:"smooth",block:"start"});
 };
 
+/* 버튼 클릭 */
 $("#check").addEventListener("click",()=>{
   const okScope = validateScope();
   const okW23   = validateW23();
   const okW26   = toggleW26Required();
-  const okW29   = validateW29();
+  const okW29   = validateW29(); // 층수-건축물 높이 연계 검증
 
   const v = getVals();
   const w31 = calcW31(v);
@@ -586,288 +535,6 @@ $("#check").addEventListener("click",()=>{
   render(res);
 });
 
-/* ----------------------------------------
-   방문자 통계: 클라이언트 사이드 설계
-   - 쿠키(visitor_id): 사용자 식별 (브라우저 단위)
-   - sessionStorage: 같은 브라우저 탭/세션 내 중복 카운트 방지
-   - localStorage: 날짜별 저장 (total, unique, users[])
-   확장 포인트: 서버 API로 전송하면 전체 사이트 통합 통계 가능
------------------------------------------*/
-
-/* Cookie 유틸 (간단) */
-const Cookie = {
-  get: (name) => {
-    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-    return m ? m.pop() : null;
-  },
-  set: (name, value, days=365) => {
-    const d = new Date();
-    d.setTime(d.getTime() + (days*24*60*60*1000));
-    document.cookie = `${name}=${value}; expires=${d.toUTCString()}; path=/`;
-  }
-};
-
-/* 고유 visitor id 확보 */
-function getOrCreateVisitorId(){
-  let id = Cookie.get('visitor_id');
-  if(!id){
-    id = 'v_' + Math.random().toString(36).slice(2,10);
-    Cookie.set('visitor_id', id, 365*5); // 5년
-  }
-  return id;
-}
-
-const STORAGE_KEY = "edu_safety_visitors_v1";
-const SESSION_TIMEOUT_MINUTES = 30; // 세션 유효 시간 (탭 닫으면 sessionStorage가 지워지므로 기본 동작은 탭 단위)
-
-/* 날짜 문자열: YYYY-MM-DD */
-function todayIso(){ return (new Date()).toISOString().slice(0,10); }
-
-/* 데이터 불러오기 (안전하게) */
-function loadStats(){
-  try{
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  }catch(e){
-    console.warn("stats parse error, resetting", e);
-    localStorage.removeItem(STORAGE_KEY);
-    return {};
-  }
-}
-
-/* 저장 */
-function saveStats(obj){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
-}
-
-/* 방문 기록 처리
-   - 같은 세션(=sessionStorage에 flag 있으면)에서는 total 증가 안 함
-   - unique는 users[]에 visitor_id가 없을 때만 증가
-*/
-function recordVisit(){
-  const date = todayIso();
-  const vid = getOrCreateVisitorId();
-  const sessFlag = `visited_${date}`;
-
-  const stats = loadStats();
-  if(!stats[date]) stats[date] = { total:0, unique:0, users:[] };
-
-  // total: session 기반 (한 세션당 1회만)
-  if(!sessionStorage.getItem(sessFlag)){
-    stats[date].total = (stats[date].total || 0) + 1;
-    sessionStorage.setItem(sessFlag, String(Date.now()));
-  }
-
-  // unique: cookie(visitor_id) 기반
-  if(!stats[date].users.includes(vid)){
-    stats[date].unique = (stats[date].unique || 0) + 1;
-    stats[date].users.push(vid);
-  }
-
-  saveStats(stats);
-
-  /* 확장 포인트(서버 연동 예시)
-     - 만약 중앙 통계(모든 방문자 기여)를 원하면 이 지점에서 fetch()로 서버에 전송하세요.
-     - 예: fetch("/api/visit", {method:"POST", body: JSON.stringify({date,vid})})
-  */
-
-  return stats;
-}
-
-/* CSV 생성 */
-function downloadCSV(data){
-  const rows = [["date","total","unique"]];
-  Object.entries(data).sort((a,b)=>a[0]<b[0] ? 1 : -1).forEach(([date, val])=>{
-    rows.push([date, val.total, val.unique]);
-  });
-  const blob = new Blob([rows.map(r=>r.join(",")).join("\n")], {type: "text/csv;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "visitors.csv";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-/* ----------------------------------------
-   차트 그리기 (Canvas) — 파스텔톤 + 부드럽게
-   - 툴팁: 캔버스 위에서 마우스 포인터에 따라 가장 가까운 포인트 표시
------------------------------------------*/
-
-const canvas = $("#trend");
-const ctx = canvas.getContext("2d");
-const tooltip = $("#chartTooltip");
-
-/* 차트 데이터 생성 (최근 14일) */
-function getChartSeries(stats){
-  const days = [...Array(14)].map((_,i)=>{
-    const dd = new Date();
-    dd.setDate(dd.getDate()-13+i);
-    return dd.toISOString().slice(0,10);
-  });
-  const totals = days.map(d => (stats[d] && stats[d].total) ? stats[d].total : 0);
-  return { days, totals };
-}
-
-/* 부드러운 곡선 (Catmull-Rom to Bezier approximation)
-   단순화: mid-point-based smoothing for small dataset.
-*/
-function drawChart(days, values){
-  // 고해상도 캔버스 고려 (devicePixelRatio)
-  const DPR = window.devicePixelRatio || 1;
-  const W = canvas.clientWidth;
-  const H = canvas.clientHeight;
-  canvas.width = Math.floor(W * DPR);
-  canvas.height = Math.floor(H * DPR);
-  canvas.style.width = W + "px";
-  canvas.style.height = H + "px";
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); // scale drawing commands
-
-  ctx.clearRect(0,0,W,H);
-
-  // 그래프 패딩
-  const P = 14;
-  const L = values.length;
-  const maxV = Math.max(1, ...values);
-
-  const X = i => P + i * (W - 2*P) / Math.max(1, L-1);
-  const Y = v => H - P - (v * (H - 2*P) / maxV);
-
-  // 배경 (subtle)
-  ctx.fillStyle = "#fbfdff";
-  ctx.fillRect(0,0,W,H);
-
-  // area fill (soft pastel)
-  ctx.beginPath();
-  ctx.moveTo(X(0), Y(values[0]));
-  for(let i=1;i<L;i++){
-    // mid point smoothing
-    const x0 = X(i-1), y0 = Y(values[i-1]);
-    const x1 = X(i), y1 = Y(values[i]);
-    const mx = (x0 + x1)/2, my = (y0 + y1)/2;
-    ctx.quadraticCurveTo(x0,y0, mx, my);
-  }
-  ctx.lineTo(X(L-1), H - P);
-  ctx.lineTo(X(0), H - P);
-  ctx.closePath();
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-fill') || 'rgba(173,216,230,0.25)';
-  ctx.fill();
-
-  // line
-  ctx.beginPath();
-  ctx.moveTo(X(0), Y(values[0]));
-  for(let i=1;i<L;i++){
-    const x0 = X(i-1), y0 = Y(values[i-1]);
-    const x1 = X(i), y1 = Y(values[i]);
-    const mx = (x0 + x1)/2, my = (y0 + y1)/2;
-    ctx.quadraticCurveTo(x0,y0, mx, my);
-  }
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-line') || 'rgba(147,197,253,0.95)';
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-
-  // points
-  for(let i=0;i<L;i++){
-    ctx.beginPath();
-    ctx.arc(X(i), Y(values[i]), 3.5, 0, Math.PI*2);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-point') || 'rgba(110,231,183,0.9)';
-    ctx.fill();
-    // small stroke
-    ctx.strokeStyle = "rgba(255,255,255,0.6)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  // x labels (MM-DD) - show every other label if crowded
-  ctx.fillStyle = "#6b7280";
-  ctx.font = "10px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  for(let i=0;i<L;i++){
-    if(L<=10 || i%2===0){
-      const txt = days[i].slice(5);
-      ctx.fillText(txt, X(i), H - 2);
-    }
-  }
-}
-
-/* 캔버스 마우스 이벤트 -> 툴팁 */
-function attachTooltip(days, values){
-  // precompute points
-  const rect = canvas.getBoundingClientRect();
-  const W = canvas.clientWidth, H = canvas.clientHeight;
-  const P = 14, L = values.length;
-  const X = i => P + i * (W - 2*P) / Math.max(1, L-1);
-  const Y = v => H - P - (v * (H - 2*P) / Math.max(1, ...values, 1));
-
-  // event handlers
-  function findNearest(mouseX, mouseY){
-    let nearest = { idx: -1, dist: Infinity };
-    for(let i=0;i<L;i++){
-      const dx = mouseX - X(i);
-      const dy = mouseY - Y(values[i]);
-      const d = Math.sqrt(dx*dx + dy*dy);
-      if(d < nearest.dist){
-        nearest = { idx: i, dist: d };
-      }
-    }
-    return nearest;
-  }
-
-  function onMove(e){
-    const r = canvas.getBoundingClientRect();
-    const mx = e.clientX - r.left;
-    const my = e.clientY - r.top;
-    const nearest = findNearest(mx, my);
-    const threshold = 18; // pixels sensitivity
-    if(nearest.idx !== -1 && nearest.dist <= threshold){
-      const i = nearest.idx;
-      // position and show tooltip
-      tooltip.style.display = "block";
-      tooltip.setAttribute("aria-hidden","false");
-      tooltip.textContent = `${days[i]} — ${values[i]}명`;
-      // place tooltip near cursor but avoid overflow
-      const left = e.clientX;
-      const top = e.clientY - 12;
-      tooltip.style.left = left + "px";
-      tooltip.style.top = top + "px";
-    }else{
-      tooltip.style.display = "none";
-      tooltip.setAttribute("aria-hidden","true");
-    }
-  }
-  function onLeave(){
-    tooltip.style.display = "none";
-    tooltip.setAttribute("aria-hidden","true");
-  }
-
-  // attach
-  canvas.removeEventListener("mousemove", canvas._mvHandler);
-  canvas.removeEventListener("mouseleave", canvas._leaveHandler);
-  canvas._mvHandler = onMove;
-  canvas._leaveHandler = onLeave;
-  canvas.addEventListener("mousemove", onMove);
-  canvas.addEventListener("mouseleave", onLeave);
-}
-
-/* ----------------------------------------
-   초기 로드: 통계 기록, 차트 렌더
------------------------------------------*/
-document.addEventListener("DOMContentLoaded", ()=>{
-  // record visit and update today's count UI
-  const stats = recordVisit();
-  const today = todayIso();
-  $("#todayCnt").textContent = stats[today] ? stats[today].total : 0;
-
-  // create chart series
-  const { days, totals } = getChartSeries(stats);
-  drawChart(days, totals);
-  attachTooltip(days, totals);
-
-  // CSV 버튼
-  $("#dl").addEventListener("click", ()=> {
-    const s = loadStats();
-    downloadCSV(s);
-  });
-});
 })();
 </script>
 </body>
