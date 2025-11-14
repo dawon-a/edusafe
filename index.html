@@ -25,6 +25,7 @@
     position:sticky;
     top:0;
     z-index:100;
+    position:sticky;
   }
   .title{
     text-align:center;
@@ -32,6 +33,22 @@
     font-size:28px;
     letter-spacing:-.5px;
   }
+  /* ✅ hits.sh 배지 스타일 */
+  .hit-badge{
+    position:absolute;
+    right:20px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+  }
+  .hit-badge img{
+    display:block;
+    height:22px;
+    border-radius:999px;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+
   .wrap{
     max-width:980px;
     margin:24px auto;
@@ -178,12 +195,21 @@
       overflow:auto;
       z-index:500;
     }
+    .hit-badge{
+      right:12px;
+    }
   }
 </style>
 </head>
 <body>
 <header class="appbar" role="banner">
   <div class="title">교육시설 안전성평가 대상 확인</div>
+  <!-- ✅ hits.sh 배지 -->
+  <div class="hit-badge">
+    <a href="https://hits.sh/dawon-a.github.io/edusafe/">
+      <img alt="Hits" src="https://hits.sh/dawon-a.github.io/edusafe.svg?color=effaff&labelColor=0073c6"/>
+    </a>
+  </div>
 </header>
 
 <main class="wrap" role="main">
@@ -200,7 +226,7 @@
     <h2 id="formTitle" class="visually-hidden" style="position:absolute;left:-9999px">입력</h2>
 
     <div class="row" id="rowScope">
-      <div class="label">공사 위치<span class="req">*</span></div>
+      <div class="label">위치 구분<span class="req">*</span></div>
       <div>
         <div class="radio" role="radiogroup">
           <label><input type="radio" name="scope" value="교내"> 교내</label>
@@ -287,7 +313,6 @@
       </div>
     </div>
 
-    <!-- 건축물 높이 + 에러 -->
     <div class="row" id="rowW29">
       <div class="label">건축물 높이(m)</div>
       <div>
@@ -386,7 +411,6 @@ const validateScope=()=>{
 };
 const validateW23=()=>{
   const scope=d.querySelector('input[name="scope"]:checked')?.value||"";
-  // 교내일 때는 이격거리(0 포함) 필수 아님
   if(scope==="교내"){
     showErr("#rowW23","#errW23",false);
     return true;
@@ -407,7 +431,7 @@ const toggleW26Required=()=>{
 const validateW29=()=>{
   const floors = $("#w28").value.trim();
   const bHeight = $("#w29").value.trim();
-  const need = floors !== "";   // 층수 입력됐으면 건축물 높이 필수
+  const need = floors !== "";
   const ok = !need || bHeight !== "";
   showErr("#rowW29","#errW29", need && !ok);
   return ok;
@@ -418,33 +442,24 @@ const validateW29=()=>{
     if(e.target?.id==="w23") validateW23();
     if(e.target?.name==="scope"){
       validateScope();
-      validateW23(); // 위치구분 바뀔 때 이격거리 에러도 재조정
+      validateW23();
     }
     if(["w24","w25","w26"].includes(e.target?.id)) toggleW26Required();
-    if(["w28","w29"].includes(e.target?.id)) validateW29(); // 층수/건축물 높이 변경 시 검증
+    if(["w28","w29"].includes(e.target?.id)) validateW29();
   }, true);
 });
 
-/* 판정 로직
-   - 교내: 이격거리와 무관하게(0 포함) 작성 대상
-   - 교외 & 4m 초과 ~ 50m 이내(inRange)에서
-       · 층수 ≥3 이면서 건축물 높이>0, 이격거리 < 건축물 높이 → 대상
-       · 구조물 높이 ≥10 이면서 이격거리 < 구조물 높이 → 대상
-   - 나머지 조건(터널/발파/해체/굴착)은 이전과 동일
-*/
+/* 판정 로직 */
 const judge=(p)=>{
   const rawW23 = $("#w23").value.trim();
 
   if(!p.scope && rawW23){return {type:"guide",msg:"위치구분을 선택해주세요"};}
-
   if(!p.scope){return {type:"guide",msg:"위치구분을 선택해주세요"};}
 
-  // 교내: 이격거리와 무관하게 작성 대상
   if(p.scope==="교내"){
     return {type:"good",msg:"(교내)건축허가 및 건축승인에 따른 교육시설"};
   }
 
-  // 교외인 경우에만 이격거리 필수
   if(p.scope==="교외" && !rawW23){
     return {type:"guide",msg:"이격거리를 입력해주세요"};
   }
@@ -454,21 +469,19 @@ const judge=(p)=>{
 
   const inRange = (p.scope==="교외" && p.w23>4 && p.w23<=50);
 
-  // 🔹 교외 & 4m초과~50m이내 & 층수 ≥3 & 이격거리 < 건축물 높이
+  // 층수 ≥3 & 이격거리 < 건축물 높이
   if(inRange && p.w28>=3 && p.w29>0 && p.w23 < p.w29){
     return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
   }
 
-  // 🔹 교외 & 4m초과~50m이내 & 구조물 높이 ≥10m & 이격거리 < 구조물 높이
+  // 구조물 높이 ≥10 & 이격거리 < 구조물 높이
   if(inRange && p.w27>=10 && p.w23 < p.w27){
     return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
   }
 
-  // 특정 공사(터널/발파/해체)
   if(inRange && ["터널공사","발파공사","건축물 해체공사(허가)","건축물 해체공사(신고)"].includes(p.w30))
     return {type:"good",msg:p.w30};
 
-  // 굴착 조건
   if(inRange && p.w24>2){
     const w31=calcW31(p);
     if(p.w23 < w31)
@@ -502,7 +515,7 @@ const render=(res)=>{
     titleText.textContent="작성 비대상입니다.";
     icon.textContent="⚠️";
     guide.style.display="none";
-  }else{ // 안내 문구 타입
+  }else{
     box.className="resultbox bad";
     title.classList.add("hidden");
     titleText.textContent="";
@@ -518,7 +531,7 @@ $("#check").addEventListener("click",()=>{
   const okScope = validateScope();
   const okW23   = validateW23();
   const okW26   = toggleW26Required();
-  const okW29   = validateW29(); // 층수-건축물 높이 연계 검증
+  const okW29   = validateW29();
 
   const v = getVals();
   const w31 = calcW31(v);
