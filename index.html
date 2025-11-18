@@ -4,69 +4,89 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>교육시설 안전성평가 대상 확인</title>
+
 <style>
+  /* =========================
+     1. CSS 변수 & 기본 설정
+  ========================== */
   :root{
-    --brand:#133e8d; --ink:#222; --muted:#6b7280; --card:#fff;
-    --btn:#0f3a8a; --btn-t:#fff; --ok:#1e7b1e; --bad:#f59e0b;
-    --soft-ok:#e8f5e9; --soft-bad:#fff7ed; --shadow:0 8px 24px rgba(0,0,0,.08);
-    --err:#d92d20; --err-bg:#fee4e2;
+    --brand:#133e8d;
+    --ink:#222;
+    --muted:#6b7280;
+    --card:#fff;
+    --btn:#0f3a8a;
+    --btn-t:#fff;
+    --ok:#1e7b1e;
+    --bad:#f59e0b;
+    --soft-ok:#e8f5e9;
+    --soft-bad:#fff7ed;
+    --shadow:0 8px 24px rgba(0,0,0,.08);
+    --err:#d92d20;
+    --err-bg:#fee4e2;
   }
-  *{box-sizing:border-box}
+
+  *{box-sizing:border-box;}
+
   body{
     margin:0;
     background:#dfe8f5;
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","맑은 고딕",sans-serif;
     color:var(--ink);
   }
+
+  .visually-hidden{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  /* =========================
+     2. 레이아웃
+  ========================== */
   .appbar{
     background:var(--brand);
     color:#fff;
-    padding:18px 20px;
+    padding:14px 20px;
     position:sticky;
     top:0;
     z-index:100;
-    position:sticky;
-  }
-  .title{
-    text-align:center;
-    font-weight:800;
-    font-size:28px;
-    letter-spacing:-.5px;
-  }
-
-/* ✅ hits.sh 배지 스타일 (PC 기본) */
-.hit-badge{
-  position:absolute;
-  right:20px;
-  top:50%;
-  transform:translateY(-50%);
-  display:flex;
-  align-items:center;
-}
-
-.hit-badge img{
-  display:block;
-  height:22px;
-  border-radius:999px;
-  box-shadow:0 2px 6px rgba(0,0,0,.25);
-}
-
-/* ✅ 모바일에서는 제목을 가리지 않도록 아래로 이동 + 크기 축소 */
-@media (max-width:640px){
-  .hit-badge{
-    position:static;
-    transform:none;
-    margin-top:6px;
     display:flex;
+    align-items:center;
     justify-content:center;
   }
 
-  .hit-badge img{
-    height:16px;     /* ← 크기 축소 */
-    box-shadow:0 1px 4px rgba(0,0,0,.2);
+  .title-wrap{
+    /* position:relative;  ← 제거해서 appbar 기준으로 hits 위치 지정 */
+    display:flex;
+    flex-direction:column;
+    align-items:center;
   }
-}
 
+  /* 제목 + 로고를 한 줄로 묶는 래퍼 */
+  .title-main{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .title{
+    font-weight:800;
+    font-size:28px;
+    letter-spacing:-.5px;
+    text-align:center;
+  }
+
+  /* 헤더 로고 (PC 기본 크기) */
+  .title-logo{
+    height:30px;
+    width:auto;
+  }
 
   .wrap{
     max-width:980px;
@@ -74,12 +94,14 @@
     padding:0 16px;
     position:relative;
   }
+
   .card{
     background:var(--card);
     border-radius:16px;
     box-shadow:var(--shadow);
     padding:18px;
   }
+
   .row{
     display:grid;
     grid-template-columns:150px 1fr;
@@ -87,15 +109,31 @@
     align-items:center;
     margin:10px 0;
   }
-  .label{font-weight:700}
-  .req{color:#dc2626;margin-left:2px}
-  .hint{color:#6b7280;font-size:12px}
+
+  /* =========================
+     3. 폼 요소 & 에러 표시
+  ========================== */
+  .label{
+    font-weight:700;
+  }
+
+  .req{
+    color:#dc2626;
+    margin-left:2px;
+  }
+
+  .hint{
+    color:var(--muted);
+    font-size:12px;
+  }
+
   .field{
     display:flex;
     gap:8px;
     align-items:flex-start;
     flex-wrap:wrap;
   }
+
   input,select{
     width:100%;
     max-width:260px;
@@ -106,8 +144,17 @@
     font-size:16px;
     outline:none;
   }
-  input:focus,select:focus{box-shadow:0 0 0 3px rgba(19,62,141,.15)}
-  .radio{display:flex;gap:16px}
+
+  input:focus,
+  select:focus{
+    box-shadow:0 0 0 3px rgba(19,62,141,.15);
+  }
+
+  .radio{
+    display:flex;
+    gap:16px;
+  }
+
   .btn{
     background:var(--btn);
     color:var(--btn-t);
@@ -117,7 +164,11 @@
     font-weight:800;
     cursor:pointer;
   }
-  .btn:active{transform:translateY(1px)}
+
+  .btn:active{
+    transform:translateY(1px);
+  }
+
   .notice{
     margin-top:10px;
     background:#fff7ed;
@@ -128,19 +179,25 @@
     font-weight:600;
     text-align:center;
   }
+
   .err{
     display:none;
     font-size:12px;
-    color:#d92d20;
-    background:#fee4e2;
+    color:var(--err);
+    background:var(--err-bg);
     padding:6px 8px;
     border-radius:8px;
     margin-top:4px;
   }
+
   .has-error input,
   .has-error select{
-    border-color:#d92d20;
+    border-color:var(--err);
   }
+
+  /* =========================
+     4. 결과 박스
+  ========================== */
   .resultbox{
     display:none;
     margin-top:14px;
@@ -149,10 +206,12 @@
     padding:14px;
     background:var(--soft-ok);
   }
+
   .resultbox.bad{
     background:var(--soft-bad);
     border-left-color:var(--bad);
   }
+
   .result-title{
     font-weight:800;
     margin-bottom:6px;
@@ -160,8 +219,15 @@
     gap:8px;
     align-items:center;
   }
-  .result-title.hidden{display:none}
-  .ico{font-size:18px}
+
+  .result-title.hidden{
+    display:none;
+  }
+
+  .ico{
+    font-size:18px;
+  }
+
   .guide{
     margin-top:10px;
     padding:10px 12px;
@@ -170,6 +236,7 @@
     color:#1f3b74;
     font-size:14px;
   }
+
   .guide a{
     color:#0f3a8a;
     font-weight:700;
@@ -179,7 +246,10 @@
     display:inline-block;
     margin-top:4px;
   }
-  /* 광고: 스크롤 시 따라오는 고정 배너(데스크탑) */
+
+  /* =========================
+     5. 광고 배너
+  ========================== */
   .ad{
     position:fixed;
     right:16px;
@@ -187,6 +257,7 @@
     z-index:9999;
     text-align:right;
   }
+
   .ad .unit{
     display:inline-block;
     background:#fff;
@@ -194,39 +265,102 @@
     box-shadow:var(--shadow);
     padding:10px;
   }
-  .ad img{height:50px;vertical-align:middle}
-  .ad p{margin:6px 0 0 0;font-size:12px;color:#4b5563}
+
+  .ad img{
+    height:50px;
+    vertical-align:middle;
+  }
+
+  .ad p{
+    margin:6px 0 0 0;
+    font-size:12px;
+    color:#4b5563;
+  }
+
+  /* =========================
+     6. hits.sh 배지
+  ========================== */
+  .hit-badge{
+    position:absolute;  /* appbar 기준 오른쪽 고정 */
+    right:20px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+  }
+
+  .hit-badge img{
+    display:block;
+    height:22px;
+    border-radius:999px;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+
+  /* =========================
+     7. 반응형 (모바일)
+  ========================== */
   @media (max-width:640px){
-    .row{grid-template-columns:1fr}
+    .row{
+      grid-template-columns:1fr;
+    }
+
     .ad{
       position:static;
       margin-bottom:8px;
       text-align:center;
     }
-    .ad .unit{width:100%}
-    /* 모바일: 결과창을 하단 패널처럼 보이게 */
+
+    .ad .unit{
+      width:100%;
+    }
+
+    /* 결과창: 하단 패널처럼 보이도록 */
     #result{
       position:fixed;
-      left:0;right:0;bottom:0;
+      left:0;
+      right:0;
+      bottom:0;
       margin:0;
       border-radius:16px 16px 0 0;
       max-height:50vh;
       overflow:auto;
       z-index:500;
     }
+
+    /* hits 배지: 제목 아래로 이동 + 크기 축소 */
     .hit-badge{
-      right:12px;
+      position:static;
+      transform:none;
+      margin-top:6px;
+      justify-content:center;
+    }
+
+    .hit-badge img{
+      height:16px;
+      box-shadow:0 1px 4px rgba(0,0,0,.2);
+    }
+
+    /* 모바일에서 헤더 로고 살짝 축소 */
+    .title-logo{
+      height:24px;
     }
   }
 </style>
 </head>
+
 <body>
 <header class="appbar" role="banner">
-  <div class="title">교육시설 안전성평가 대상 확인</div>
-  <!-- ✅ hits.sh 배지 -->
+  <div class="title-wrap">
+    <!-- 제목 + 로고 한 줄 -->
+    <div class="title-main">
+      <span class="title">교육시설 안전성평가 대상 확인</span>
+      <img src="header-logo.png" alt="서비스 로고" class="title-logo">
+    </div>
+  </div>
+  <!-- hits.sh 배지: 헤더 우측에 고정 -->
   <div class="hit-badge">
     <a href="https://hits.sh/dawon-a.github.io/edusafe/">
-      <img alt="Hits" src="https://hits.sh/dawon-a.github.io/edusafe.svg?color=effaff&labelColor=0073c6"/>
+      <img alt="Hits" src="https://hits.sh/dawon-a.github.io/edusafe.svg?color=effaff&labelColor=0073c6">
     </a>
   </div>
 </header>
@@ -235,17 +369,18 @@
   <!-- 광고: 스크롤 따라오는 배너 -->
   <aside class="ad" aria-label="스폰서">
     <a class="unit" href="http://dawonsafety.com/board/board_view?code=estimate&no=16" target="_blank" rel="noopener">
-      <img src="dawon-logo.png" alt="다원안전" />
+      <img src="dawon-logo.png" alt="다원안전">
       <p class="muted">견적 바로가기</p>
     </a>
   </aside>
 
   <!-- 입력 카드 -->
   <section class="card" aria-labelledby="formTitle">
-    <h2 id="formTitle" class="visually-hidden" style="position:absolute;left:-9999px">입력</h2>
+    <h2 id="formTitle" class="visually-hidden">입력</h2>
 
+    <!-- 위치 구분 -->
     <div class="row" id="rowScope">
-      <div class="label">공사 위치<span class="req">*</span></div>
+      <div class="label">위치 구분<span class="req">*</span></div>
       <div>
         <div class="radio" role="radiogroup">
           <label><input type="radio" name="scope" value="교내"> 교내</label>
@@ -255,6 +390,7 @@
       </div>
     </div>
 
+    <!-- 이격거리 -->
     <div class="row" id="rowW23">
       <div class="label">학교경계 이격거리(m)<span class="req">*</span></div>
       <div>
@@ -266,6 +402,7 @@
       </div>
     </div>
 
+    <!-- 영향거리 -->
     <div class="row">
       <div class="label">영향거리(m)</div>
       <div>
@@ -276,6 +413,7 @@
       </div>
     </div>
 
+    <!-- 굴착깊이 -->
     <div class="row" id="rowW24">
       <div class="label">굴착깊이 h1(m)</div>
       <div>
@@ -287,6 +425,7 @@
       </div>
     </div>
 
+    <!-- 부지단차 -->
     <div class="row" id="rowW25">
       <div class="label">부지단차 h2(m)</div>
       <div>
@@ -297,6 +436,7 @@
       </div>
     </div>
 
+    <!-- 부지높이 관계 -->
     <div class="row" id="rowW26">
       <div class="label">부지높이 관계</div>
       <div>
@@ -312,6 +452,7 @@
       </div>
     </div>
 
+    <!-- 구조물 높이 -->
     <div class="row">
       <div class="label">구조물 높이(m)</div>
       <div>
@@ -322,6 +463,7 @@
       </div>
     </div>
 
+    <!-- 층수 -->
     <div class="row">
       <div class="label">층수</div>
       <div>
@@ -332,6 +474,7 @@
       </div>
     </div>
 
+    <!-- 건축물 높이 + 에러 -->
     <div class="row" id="rowW29">
       <div class="label">건축물 높이(m)</div>
       <div>
@@ -343,6 +486,7 @@
       </div>
     </div>
 
+    <!-- 공사종류 -->
     <div class="row">
       <div class="label">공사종류</div>
       <div>
@@ -384,191 +528,260 @@
 
 <script>
 (()=>{"use strict";
-const d=document,$=s=>d.querySelector(s),N=v=>Number(v)||0;
 
-/* 영향거리 계산 */
-const calcW31=({w24,w25,w26,w27})=>{
-  if(w24>=2){
-    if(w26==="같음") return 1.5*w24+4;
-    if(w26==="낮음") return 1.5*(w24+w25)+4;
-    if(w26==="높음") return 1.5*(w24-w25)+4;
-  }
-  return w27||0;
-};
+  /* =========================
+     1. 헬퍼 & 상수
+  ========================== */
+  const d = document;
+  const $ = sel => d.querySelector(sel);
+  const N = v => Number(v) || 0;
 
-/* 값 수집 */
-const getVals=()=>({
-  scope:d.querySelector('input[name="scope"]:checked')?.value||"",
-  w23:N($("#w23").value),
-  w24:N($("#w24").value),
-  w25:N($("#w25").value),
-  w26:$("#w26").value,
-  w27:N($("#w27").value), // 구조물 높이
-  w28:N($("#w28").value), // 층수
-  w29:N($("#w29").value), // 건축물 높이
-  w30:$("#w30").value
-});
+  const MSG = {
+    NEED_SCOPE : "위치구분을 선택해주세요",
+    NEED_W23   : "이격거리를 입력해주세요",
+    NEED_W26   : "굴착·단차 입력 시 ‘부지높이 관계’를 선택해주세요",
+    NEED_W29   : "층수를 입력한 경우 건축물 높이(m)를 함께 입력해주세요",
 
-/* 에러 표시 */
-const showErr=(rowSel, errSel, on)=>{
-  const row=$(rowSel), err=$(errSel);
-  if(!row || !err) return;
-  if(on){
-    row.classList.add("has-error");
-    err.style.display="block";
-  }else{
-    row.classList.remove("has-error");
-    err.style.display="none";
-  }
-};
+    SCOPE_IN   : "(교내)건축허가 및 건축승인에 따른 교육시설",
+    DIST_4M    : "(교외)학교경계로부터 직선거리 4미터 이내의 건설공사",
+    HIGH_BLDG  : "3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우",
+    EXCAV      : "굴착깊이 2미터 이상인 경우",
+    NOT_TARGET : "비대상"
+  };
 
-/* 실시간 유효성 검사 */
-const validateScope=()=>{
-  const sel=d.querySelector('input[name="scope"]:checked');
-  showErr("#rowScope","#errScope",!sel);
-  return !!sel;
-};
-const validateW23=()=>{
-  const scope=d.querySelector('input[name="scope"]:checked')?.value||"";
-  if(scope==="교내"){
-    showErr("#rowW23","#errW23",false);
-    return true;
-  }
-  const v=$("#w23").value.trim();
-  showErr("#rowW23","#errW23",v==="");
-  return v!==""; // 교외에서만 필수
-};
-const toggleW26Required=()=>{
-  const need = !!($("#w24").value) || !!($("#w25").value);
-  $("#w26").required = need;
-  const ok = $("#w26").value!=="" || !need;
-  showErr("#rowW24","#errW26need", need && !ok);
-  return ok;
-};
+  const SPECIAL_WORKS = [
+    "터널공사",
+    "발파공사",
+    "건축물 해체공사(허가)",
+    "건축물 해체공사(신고)"
+  ];
 
-/* 층수 입력 시 건축물 높이 필수 검증 */
-const validateW29=()=>{
-  const floors = $("#w28").value.trim();
-  const bHeight = $("#w29").value.trim();
-  const need = floors !== "";
-  const ok = !need || bHeight !== "";
-  showErr("#rowW29","#errW29", need && !ok);
-  return ok;
-};
-
-["blur","input","change"].forEach(ev=>{
-  d.addEventListener(ev, e=>{
-    if(e.target?.id==="w23") validateW23();
-    if(e.target?.name==="scope"){
-      validateScope();
-      validateW23();
+  /* =========================
+     2. 영향거리 계산
+  ========================== */
+  const calcW31 = ({w24,w25,w26,w27}) => {
+    if(w24 >= 2){
+      if(w26 === "같음") return 1.5 * w24 + 4;
+      if(w26 === "낮음") return 1.5 * (w24 + w25) + 4;
+      if(w26 === "높음") return 1.5 * (w24 - w25) + 4;
     }
-    if(["w24","w25","w26"].includes(e.target?.id)) toggleW26Required();
-    if(["w28","w29"].includes(e.target?.id)) validateW29();
-  }, true);
-});
+    return w27 || 0;
+  };
 
-/* 판정 로직 */
-const judge=(p)=>{
-  const rawW23 = $("#w23").value.trim();
+  /* =========================
+     3. 값 수집
+  ========================== */
+  const getVals = () => ({
+    scope: d.querySelector('input[name="scope"]:checked')?.value || "",
+    w23  : N($("#w23").value),
+    w24  : N($("#w24").value),
+    w25  : N($("#w25").value),
+    w26  : $("#w26").value,
+    w27  : N($("#w27").value), // 구조물 높이
+    w28  : N($("#w28").value), // 층수
+    w29  : N($("#w29").value), // 건축물 높이
+    w30  : $("#w30").value
+  });
 
-  if(!p.scope && rawW23){return {type:"guide",msg:"위치구분을 선택해주세요"};}
-  if(!p.scope){return {type:"guide",msg:"위치구분을 선택해주세요"};}
+  /* =========================
+     4. 에러 표시 유틸
+  ========================== */
+  const showErr = (rowSel, errSel, on) => {
+    const row = $(rowSel);
+    const err = $(errSel);
+    if(!row || !err) return;
+    if(on){
+      row.classList.add("has-error");
+      err.style.display = "block";
+    }else{
+      row.classList.remove("has-error");
+      err.style.display = "none";
+    }
+  };
 
-  if(p.scope==="교내"){
-    return {type:"good",msg:"(교내)건축허가 및 건축승인에 따른 교육시설"};
-  }
+  /* =========================
+     5. 필드별 검증
+  ========================== */
+  const validateScope = () => {
+    const sel = d.querySelector('input[name="scope"]:checked');
+    showErr("#rowScope", "#errScope", !sel);
+    return !!sel;
+  };
 
-  if(p.scope==="교외" && !rawW23){
-    return {type:"guide",msg:"이격거리를 입력해주세요"};
-  }
+  const validateW23 = () => {
+    const scope = d.querySelector('input[name="scope"]:checked')?.value || "";
+    // 교내일 때는 이격거리(0 포함) 필수 아님
+    if(scope === "교내"){
+      showErr("#rowW23", "#errW23", false);
+      return true;
+    }
+    const v = $("#w23").value.trim();
+    const invalid = v === "";
+    showErr("#rowW23", "#errW23", invalid);
+    return !invalid;
+  };
 
-  if(p.scope==="교외" && p.w23<=4)
-    return {type:"good",msg:"(교외)학교경계로부터 직선거리 4미터 이내의 건설공사"};
+  const toggleW26Required = () => {
+    const need = !!($("#w24").value) || !!($("#w25").value);
+    $("#w26").required = need;
+    const ok = $("#w26").value !== "" || !need;
+    showErr("#rowW24", "#errW26need", need && !ok);
+    return ok;
+  };
 
-  const inRange = (p.scope==="교외" && p.w23>4 && p.w23<=50);
+  const validateW29 = () => {
+    const floors  = $("#w28").value.trim();
+    const bHeight = $("#w29").value.trim();
+    const need = floors !== "";      // 층수 입력 시 건축물 높이 필수
+    const ok   = !need || bHeight !== "";
+    showErr("#rowW29", "#errW29", need && !ok);
+    return ok;
+  };
 
-  // 층수 ≥3 & 이격거리 < 건축물 높이
-  if(inRange && p.w28>=3 && p.w29>0 && p.w23 < p.w29){
-    return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
-  }
+  /* =========================
+     6. 판정 로직
+  ========================== */
+  const judge = p => {
+    const rawW23 = $("#w23").value.trim();
 
-  // 구조물 높이 ≥10 & 이격거리 < 구조물 높이
-  if(inRange && p.w27>=10 && p.w23 < p.w27){
-    return {type:"good",msg:"3층 이상 건축물 또는 구조물 높이 10미터 이상인 경우"};
-  }
+    if(!p.scope && rawW23){
+      return {type:"guide", msg:MSG.NEED_SCOPE};
+    }
+    if(!p.scope){
+      return {type:"guide", msg:MSG.NEED_SCOPE};
+    }
 
-  if(inRange && ["터널공사","발파공사","건축물 해체공사(허가)","건축물 해체공사(신고)"].includes(p.w30))
-    return {type:"good",msg:p.w30};
+    // 교내: 이격거리와 무관하게(0 포함) 작성 대상
+    if(p.scope === "교내"){
+      return {type:"good", msg:MSG.SCOPE_IN};
+    }
 
-  if(inRange && p.w24>2){
-    const w31=calcW31(p);
-    if(p.w23 < w31)
-      return {type:"good",msg:"굴착깊이 2미터 이상인 경우"};
-  }
+    // 교외: 이격거리 필수
+    if(p.scope === "교외" && !rawW23){
+      return {type:"guide", msg:MSG.NEED_W23};
+    }
 
-  return {type:"bad",msg:"비대상"};
-};
+    // 교외 & 4m 이내
+    if(p.scope === "교외" && p.w23 <= 4){
+      return {type:"good", msg:MSG.DIST_4M};
+    }
 
-/* 결과 표시 */
-const render=(res)=>{
-  const box=$("#result"),
-        title=$("#resultTitle"),
-        titleText=$("#resultTitleText"),
-        icon=$("#resultIcon"),
-        msg=$("#resultMsg"),
-        guide=$("#nextGuide");
+    // 교외 & 4m 초과 ~ 50m 이내
+    const inRange = (p.scope === "교외" && p.w23 > 4 && p.w23 <= 50);
 
-  box.style.display="block";
-  msg.textContent=res.msg;
+    // 교외 & 범위 내 & 층수 ≥3 & 건축물 높이>0 & 이격거리 < 건축물 높이
+    if(inRange && p.w28 >= 3 && p.w29 > 0 && p.w23 < p.w29){
+      return {type:"good", msg:MSG.HIGH_BLDG};
+    }
 
-  if(res.type==="good"){
-    box.className="resultbox";
-    title.classList.remove("hidden");
-    titleText.textContent="작성 대상입니다. 적용 항목:";
-    icon.textContent="✅";
-    guide.style.display="block";
-  }else if(res.type==="bad"){
-    box.className="resultbox bad";
-    title.classList.remove("hidden");
-    titleText.textContent="작성 비대상입니다.";
-    icon.textContent="⚠️";
-    guide.style.display="none";
-  }else{
-    box.className="resultbox bad";
-    title.classList.add("hidden");
-    titleText.textContent="";
-    icon.textContent="⚠️";
-    guide.style.display="none";
-  }
+    // 교외 & 범위 내 & 구조물 높이 ≥10m & 이격거리 < 구조물 높이
+    if(inRange && p.w27 >= 10 && p.w23 < p.w27){
+      return {type:"good", msg:MSG.HIGH_BLDG};
+    }
 
-  box.scrollIntoView({behavior:"smooth",block:"start"});
-};
+    // 교외 & 범위 내 & 특정 공사
+    if(inRange && SPECIAL_WORKS.includes(p.w30)){
+      return {type:"good", msg:p.w30};
+    }
 
-/* 버튼 클릭 */
-$("#check").addEventListener("click",()=>{
-  const okScope = validateScope();
-  const okW23   = validateW23();
-  const okW26   = toggleW26Required();
-  const okW29   = validateW29();
+    // 교외 & 범위 내 & 굴착 조건
+    if(inRange && p.w24 > 2){
+      const w31 = calcW31(p);
+      if(p.w23 < w31){
+        return {type:"good", msg:MSG.EXCAV};
+      }
+    }
 
-  const v = getVals();
-  const w31 = calcW31(v);
-  $("#w31").value = w31 ? Math.round(w31*100)/100 : "";
+    return {type:"bad", msg:MSG.NOT_TARGET};
+  };
 
-  if(!okScope || !okW23 || !okW26 || !okW29){
-    if(!okScope && $("#w23").value) return render({type:"guide",msg:"위치구분을 선택해주세요"});
-    if(!okW23) return render({type:"guide",msg:"이격거리를 입력해주세요"});
-    if(!okW26) return render({type:"guide",msg:"굴착·단차 입력 시 ‘부지높이 관계’를 선택해주세요"});
-    if(!okW29) return render({type:"guide",msg:"층수를 입력한 경우 건축물 높이(m)를 함께 입력해주세요"});
-  }
+  /* =========================
+     7. 결과 렌더링
+  ========================== */
+  const render = res => {
+    const box       = $("#result");
+    const title     = $("#resultTitle");
+    const titleText = $("#resultTitleText");
+    const icon      = $("#resultIcon");
+    const msg       = $("#resultMsg");
+    const guide     = $("#nextGuide");
 
-  const res = judge(v);
-  render(res);
-});
+    box.style.display = "block";
+    msg.textContent   = res.msg;
 
-})();
+    if(res.type === "good"){
+      box.className = "resultbox";
+      title.classList.remove("hidden");
+      titleText.textContent = "작성 대상입니다. 적용 항목:";
+      icon.textContent = "✅";
+      guide.style.display = "block";
+    }else if(res.type === "bad"){
+      box.className = "resultbox bad";
+      title.classList.remove("hidden");
+      titleText.textContent = "작성 비대상입니다.";
+      icon.textContent = "⚠️";
+      guide.style.display = "none";
+    }else{ // 안내 문구 타입
+      box.className = "resultbox bad";
+      title.classList.add("hidden");
+      titleText.textContent = "";
+      icon.textContent = "⚠️";
+      guide.style.display = "none";
+    }
+
+    box.scrollIntoView({behavior:"smooth", block:"start"});
+  };
+
+  /* =========================
+     8. 이벤트 바인딩
+  ========================== */
+  ["blur","input","change"].forEach(ev=>{
+    d.addEventListener(ev, e=>{
+      const id = e.target?.id;
+
+      if(id === "w23") validateW23();
+
+      if(e.target?.name === "scope"){
+        validateScope();
+        validateW23();
+      }
+
+      if(["w24","w25","w26"].includes(id)) toggleW26Required();
+
+      if(["w28","w29"].includes(id)) validateW29();
+    }, true);
+  });
+
+  $("#check").addEventListener("click", () => {
+    const okScope = validateScope();
+    const okW23   = validateW23();
+    const okW26   = toggleW26Required();
+    const okW29   = validateW29();
+
+    const vals = getVals();
+    const w31  = calcW31(vals);
+    $("#w31").value = w31 ? Math.round(w31 * 100) / 100 : "";
+
+    if(!okScope || !okW23 || !okW26 || !okW29){
+      if(!okScope && $("#w23").value){
+        return render({type:"guide", msg:MSG.NEED_SCOPE});
+      }
+      if(!okW23){
+        return render({type:"guide", msg:MSG.NEED_W23});
+      }
+      if(!okW26){
+        return render({type:"guide", msg:MSG.NEED_W26});
+      }
+      if(!okW29){
+        return render({type:"guide", msg:MSG.NEED_W29});
+      }
+    }
+
+    const res = judge(vals);
+    render(res);
+  });
+
+})();  
 </script>
 </body>
 </html>
-
